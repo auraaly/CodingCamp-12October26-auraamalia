@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Life Dashboard</title>
+  <meta name="description" content="Your personal productivity dashboard — tasks, focus timer, and quick links in one place." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Background blobs for glassmorphism depth -->
+  <div class="bg-blob bg-blob--1" aria-hidden="true"></div>
+  <div class="bg-blob bg-blob--2" aria-hidden="true"></div>
+  <div class="bg-blob bg-blob--3" aria-hidden="true"></div>
+
+  <!-- Theme Toggle -->
+  <button id="theme-toggle" class="theme-toggle" aria-label="Toggle light/dark theme">
+    <span id="theme-icon">☀️</span>
+    <span id="theme-label">Light</span>
+  </button>
+
+  <div class="dashboard">
+
+    <!-- ═══════════════════════════════════════
+         1. TOP: Greeting Widget (Full Width)
+         ═══════════════════════════════════════ -->
+    <section class="widget" id="widget-greeting" aria-label="Greeting and time">
+      <div class="greeting__main">
+        <p id="greeting-time" class="greeting__time">00:00:00</p>
+        <p id="greeting-date" class="greeting__date">Tuesday, 27 January 2026</p>
+        <p id="greeting-text" class="greeting__text">Good morning</p>
+      </div>
+      <form id="username-form" class="greeting__name-form" novalidate>
+        <label for="username-input" class="form-label">Your name</label>
+        <div class="input-row">
+          <input
+            type="text"
+            id="username-input"
+            class="input"
+            placeholder="Enter your name…"
+            maxlength="50"
+            autocomplete="off"
+          />
+          <button type="submit" class="btn btn--primary" id="username-save-btn">Save</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         2. Focus Timer Widget (Left Column)
+         ═══════════════════════════════════════ -->
+    <section class="widget" id="widget-timer" aria-label="Focus timer">
+      <h2 class="widget__title">Focus Timer</h2>
+
+      <!-- SVG Progress Ring -->
+      <div class="timer__ring-wrapper">
+        <svg class="timer__ring" viewBox="0 0 200 200" aria-hidden="true">
+          <circle class="timer__ring-track" cx="100" cy="100" r="85" />
+          <circle
+            id="timer-ring-progress"
+            class="timer__ring-progress"
+            cx="100" cy="100" r="85"
+            stroke-dasharray="534"
+            stroke-dashoffset="0"
+          />
+        </svg>
+        <div class="timer__center">
+          <div id="timer-display" class="timer__display" aria-live="polite" aria-atomic="true">25:00</div>
+          <div id="timer-mode-label" class="timer__mode-label">Focus</div>
+        </div>
+      </div>
+
+      <div id="timer-notification" class="timer__notification" role="alert" aria-live="assertive" hidden></div>
+
+      <div class="timer__controls">
+        <button id="timer-start" class="btn btn--primary" aria-label="Start timer">▶ Start</button>
+        <button id="timer-pause" class="btn btn--primary" aria-label="Pause timer" disabled>⏸ Pause</button>
+        <button id="timer-stop"  class="btn btn--ghost"   aria-label="Stop timer"  disabled>⏹ Stop</button>
+        <button id="timer-reset" class="btn btn--ghost"   aria-label="Reset timer">↺ Reset</button>
+      </div>
+
+      <!-- Custom Pomodoro Duration (Challenge 3) -->
+      <details class="timer__settings" id="timer-settings-details">
+        <summary class="timer__settings-toggle" id="timer-settings-summary">⚙ Custom duration</summary>
+        <form id="timer-duration-form" class="timer__duration-form" novalidate>
+          <div class="input-row">
+            <label for="timer-duration-input" class="form-label sr-only">Minutes</label>
+            <input
+              type="number"
+              id="timer-duration-input"
+              class="input input--sm"
+              min="1"
+              max="120"
+              placeholder="Minutes (1–120)"
+              aria-label="Custom timer duration in minutes"
+            />
+            <button type="submit" class="btn btn--primary btn--sm" id="timer-duration-save-btn">Set</button>
+          </div>
+          <p id="timer-duration-error" class="error-msg" role="alert" aria-live="polite" hidden></p>
+        </form>
+      </details>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         3. Task List Widget (Right Column)
+         ═══════════════════════════════════════ -->
+    <section class="widget" id="widget-tasks" aria-label="Task list">
+      <div class="widget__header">
+        <h2 class="widget__title">Tasks</h2>
+        <button id="task-sort" class="btn btn--ghost btn--sm" aria-label="Change sort order">↕ Default</button>
+      </div>
+      <form id="task-form" class="add-form" novalidate>
+        <div class="input-row">
+          <input
+            type="text"
+            id="task-input"
+            class="input"
+            placeholder="Add a new task…"
+            autocomplete="off"
+          />
+          <button type="submit" class="btn btn--primary" id="task-add-btn">+ Add</button>
+        </div>
+        <p id="task-error" class="error-msg" role="alert" aria-live="polite" hidden></p>
+      </form>
+      <ul id="task-list" class="task-list" aria-label="Task items"></ul>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         4. BOTTOM: Quick Links (Full Width)
+         ═══════════════════════════════════════ -->
+    <section class="widget" id="widget-links" aria-label="Quick links">
+      <h2 class="widget__title">Quick Links</h2>
+      <form id="links-form" class="add-form" novalidate>
+        <div class="links-form__fields">
+          <div class="input-group">
+            <label for="link-label-input" class="form-label">Label</label>
+            <input
+              type="text"
+              id="link-label-input"
+              class="input"
+              placeholder="e.g. GitHub"
+              autocomplete="off"
+            />
+          </div>
+          <div class="input-group">
+            <label for="link-url-input" class="form-label">URL</label>
+            <input
+              type="url"
+              id="link-url-input"
+              class="input"
+              placeholder="https://example.com"
+              autocomplete="off"
+            />
+          </div>
+          <button type="submit" class="btn btn--primary btn--self-end" id="link-add-btn">+ Add</button>
+        </div>
+        <p id="link-error" class="error-msg" role="alert" aria-live="polite" hidden></p>
+      </form>
+      <div id="links-list" class="links-list" aria-label="Quick link buttons"></div>
+    </section>
+
+  </div><!-- /.dashboard -->
+
+  <!-- LocalStorage unavailable banner -->
+  <div id="storage-warning" class="storage-warning" role="alert" hidden>
+    ⚠️ Local storage is unavailable. Your data won't be saved between sessions.
+  </div>
+
+  <script defer src="js/app.js"></script>
+</body>
+</html>

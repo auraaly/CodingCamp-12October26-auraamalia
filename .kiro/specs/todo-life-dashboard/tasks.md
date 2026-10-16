@@ -1,0 +1,221 @@
+# Implementation Plan: To-Do List Life Dashboard
+
+## Overview
+
+Implementasi SPA zero-dependency menggunakan HTML, CSS, dan Vanilla JavaScript. Pendekatan bertahap: mulai dari kerangka HTML + setup CSS variables, lalu Storage Module, kemudian tiap widget controller satu per satu, dan diakhiri dengan wiring semua komponen di `init()` utama. Setiap langkah langsung dapat diuji di browser.
+
+## Tasks
+
+- [x] 1. Buat kerangka HTML dan setup file CSS/JS
+  - Perbarui `index.html`: tambahkan struktur markup lengkap dengan semua section widget (greeting, timer, task list, quick links), tombol theme toggle, dan form custom name
+  - Sertakan `<link>` ke `css/style.css` dan `<script>` ke `js/app.js` di `index.html`
+  - Buat file `css/style.css` dengan CSS custom properties (variables) untuk tema light dan dark (`[data-theme="dark"]`), layout grid/flexbox, dan styling dasar tiap widget
+  - Buat file `js/app.js` dengan struktur IIFE kosong untuk setiap modul (StorageModule, GreetingController, TimerController, TaskController, LinksController, ThemeController, UsernameController, Renderer)
+  - _Requirements: 12.1, 12.2_
+
+- [x] 2. Implementasi Storage Module
+  - [x] 2.1 Tulis `StorageModule` dengan metode `load(key)` dan `save(key, value)`
+    - `load` mengembalikan `null` jika key tidak ada, `localStorage` tidak tersedia, atau JSON malformed (tangkap exception, log ke `console.error`)
+    - `save` menelan `QuotaExceededError` secara silent
+    - Definisikan konstanta `StorageModule.KEYS = { TASKS, LINKS, THEME, USERNAME }`
+    - _Requirements: 11.1, 11.2, 11.3_
+  - [ ]* 2.2 Tulis property test untuk storage round-trip (Property 9)
+    - **Property 9: Data storage round-trip preserves objects**
+    - **Validates: Requirements 3.4, 3.5, 7.5, 7.6, 5.3, 11.1, 11.2**
+    - Gunakan `fc.array(taskArbitrary)` dan `fc.array(linkArbitrary)`
+    - `// Feature: todo-life-dashboard, Property 9: Data storage round-trip preserves objects`
+
+- [x] 3. Implementasi helper format dan Renderer
+  - [x] 3.1 Tulis fungsi `formatTime(date)` yang menghasilkan string HH:MM dengan zero-padding
+    - _Requirements: 1.1_
+  - [ ]* 3.2 Tulis property test untuk format waktu (Property 2)
+    - **Property 2: Time format is always HH:MM**
+    - **Validates: Requirements 1.1**
+    - Gunakan `fc.date()`
+    - `// Feature: todo-life-dashboard, Property 2: Time format is always HH:MM`
+  - [x] 3.3 Tulis fungsi `formatDate(date)` yang menghasilkan string human-readable (e.g. "Monday, 14 July 2025")
+    - _Requirements: 1.2_
+  - [ ]* 3.4 Tulis property test untuk format tanggal (Property 3)
+    - **Property 3: Date format contains all human-readable components**
+    - **Validates: Requirements 1.2**
+    - Gunakan `fc.date()`
+    - `// Feature: todo-life-dashboard, Property 3: Date format contains all human-readable components`
+  - [x] 3.5 Tulis fungsi `getGreetingPhrase(hour)` yang memetakan jam 0–23 ke salah satu dari empat frasa
+    - _Requirements: 1.3, 1.4, 1.5, 1.6_
+  - [ ]* 3.6 Tulis property test untuk greeting phrase (Property 1)
+    - **Property 1: Greeting phrase covers all hours**
+    - **Validates: Requirements 1.3, 1.4, 1.5, 1.6**
+    - Gunakan `fc.integer({ min: 0, max: 23 })`
+    - `// Feature: todo-life-dashboard, Property 1: Greeting phrase covers all hours`
+  - [x] 3.7 Tulis fungsi `formatTimer(seconds)` yang menghasilkan string MM:SS dengan zero-padding
+    - _Requirements: 2.7_
+  - [ ]* 3.8 Tulis property test untuk timer format (Property 5)
+    - **Property 5: Timer format is always MM:SS**
+    - **Validates: Requirements 2.7**
+    - Gunakan `fc.integer({ min: 0, max: 1500 })`
+    - `// Feature: todo-life-dashboard, Property 5: Timer format is always MM:SS`
+  - [x] 3.9 Tulis fungsi `sortTasks(tasks, mode)` yang mengembalikan array baru tanpa memutasi input
+    - Dukung tiga mode: `INSERTION` (urut `createdAt` ascending), `NAME` (A–Z), `STATUS` (incomplete first)
+    - _Requirements: 6.1, 6.2, 6.3_
+  - [ ]* 3.10 Tulis property test untuk sort tidak memutasi array sumber (Property 14)
+    - **Property 14: Sort does not mutate the source array**
+    - **Validates: Requirements 6.2**
+    - Gunakan `fc.array(taskArbitrary)` × `fc.constantFrom(...Object.values(SortMode))`
+    - `// Feature: todo-life-dashboard, Property 14: Sort does not mutate the source array`
+  - [ ]* 3.11 Tulis property test untuk insertion-order sort (Property 15)
+    - **Property 15: Insertion-order sort preserves createdAt ordering**
+    - **Validates: Requirements 6.3**
+    - Gunakan `fc.array(taskArbitrary)` dengan `createdAt` yang berbeda-beda
+    - `// Feature: todo-life-dashboard, Property 15: Insertion-order sort preserves createdAt ordering`
+
+- [x] 4. Checkpoint — Pastikan semua fungsi helper dan Storage Module berjalan benar
+  - Pastikan semua tests lulus, tanyakan ke user jika ada pertanyaan.
+
+- [x] 5. Implementasi Greeting Widget Controller
+  - [x] 5.1 Tulis `GreetingController.init()` yang merender greeting langsung dan memulai interval 1 menit
+    - `render()` memanggil `formatTime`, `formatDate`, `getGreetingPhrase`, dan memperbarui elemen `#greeting-time`, `#greeting-date`, `#greeting-text`
+    - Sertakan `username` dari state jika ada, append ke frasa (e.g. "Good morning, Alex")
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
+  - [ ]* 5.2 Tulis property test untuk greeting dengan username (Property 4)
+    - **Property 4: Greeting with username contains both phrase and name**
+    - **Validates: Requirements 1.7**
+    - Gunakan `fc.string()` (phrase) × `fc.string({ minLength: 1 })` (name)
+    - `// Feature: todo-life-dashboard, Property 4: Greeting with username contains both phrase and name`
+
+- [x] 6. Implementasi Focus Timer Controller
+  - [x] 6.1 Tulis `TimerController` dengan state `{ remaining: 1500, running: false, intervalId: null }`
+    - `init()` merender waktu awal 25:00
+    - `start()` memulai interval 1 detik, decrement `remaining`, cek `remaining > 0` sebelum decrement
+    - `stop()` membersihkan interval
+    - `reset()` membersihkan interval dan set `remaining` kembali ke 1500
+    - Ketika `remaining` mencapai 0: hentikan interval, tampilkan notifikasi visual/teks ke user
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
+  - [ ]* 6.2 Tulis property test untuk reset selalu kembali ke durasi default (Property 6)
+    - **Property 6: Reset always returns to default duration**
+    - **Validates: Requirements 2.5**
+    - Gunakan `fc.integer({ min: 0, max: 1500 })`
+    - `// Feature: todo-life-dashboard, Property 6: Reset always returns to default duration`
+  - [ ]* 6.3 Tulis unit test untuk timer (start/stop/countdown/expiry)
+    - Gunakan fake timers (`vi.useFakeTimers`) untuk advance waktu
+    - Verifikasi state setelah start, stop, reset, dan ketika `remaining` mencapai 0
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.6_
+
+- [x] 7. Implementasi Task List Controller
+  - [x] 7.1 Tulis `TaskController.addTask(description)` dan validasi input
+    - Trim input; jika kosong atau hanya whitespace, tampilkan pesan inline "Task cannot be empty" dan jangan buat task baru
+    - Jika valid: buat objek `Task` dengan `id` (UUID atau `Date.now()`), `description` (trimmed), `completed: false`, `createdAt: Date.now()`
+    - Tambahkan ke `state.tasks`, simpan ke Storage, panggil `render()`
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+  - [ ]* 7.2 Tulis property test untuk add valid task menambah panjang array (Property 7)
+    - **Property 7: Adding a valid task grows the task list by one**
+    - **Validates: Requirements 3.2**
+    - Gunakan `fc.array(taskArbitrary)` × `fc.string({ minLength: 1 }).filter(s => s.trim().length > 0)`
+    - `// Feature: todo-life-dashboard, Property 7: Adding a valid task grows the task list by one`
+  - [ ]* 7.3 Tulis property test untuk whitespace input ditolak (Property 8)
+    - **Property 8: Whitespace-only input is rejected**
+    - **Validates: Requirements 3.3**
+    - Gunakan `fc.stringOf(fc.constantFrom(' ', '\t', '\n'))`
+    - `// Feature: todo-life-dashboard, Property 8: Whitespace-only input is rejected`
+  - [x] 7.4 Tulis `TaskController.editTask(id, newDescription)` dan `TaskController.deleteTask(id)`
+    - `editTask`: update `description` di state dan Storage; tampilkan inline input pre-filled dengan teks saat ini saat mode edit diaktifkan
+    - `deleteTask`: hapus dari `state.tasks` dan Storage, panggil `render()`
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [ ]* 7.5 Tulis property test untuk edit memperbarui deskripsi (Property 10)
+    - **Property 10: Editing a task updates description in state and storage**
+    - **Validates: Requirements 4.2**
+    - Gunakan `taskArbitrary` × `fc.string({ minLength: 1 }).filter(s => s.trim().length > 0)`
+    - `// Feature: todo-life-dashboard, Property 10: Editing a task updates description in state and storage`
+  - [ ]* 7.6 Tulis property test untuk delete menghapus item (Property 11)
+    - **Property 11: Deleting an item removes it from state and storage**
+    - **Validates: Requirements 4.3**
+    - Gunakan `fc.array(taskArbitrary, { minLength: 1 })`
+    - `// Feature: todo-life-dashboard, Property 11: Deleting an item removes it from state and storage`
+  - [x] 7.7 Tulis `TaskController.toggleComplete(id)` dan `TaskController.render()`
+    - Toggle field `completed` di task yang sesuai, simpan ke Storage, panggil `render()`
+    - `render()` memanggil `sortTasks(state.tasks, state.sortMode)` lalu `Renderer.renderTaskList(...)`, task completed diberi class CSS `completed` (e.g. strikethrough)
+    - _Requirements: 5.1, 5.2, 5.3, 6.1, 6.2, 6.3_
+  - [ ]* 7.8 Tulis property test untuk toggle completion adalah inversnya sendiri (Property 12)
+    - **Property 12: Completion toggle is its own inverse**
+    - **Validates: Requirements 5.1**
+    - Gunakan `taskArbitrary`
+    - `// Feature: todo-life-dashboard, Property 12: Completion toggle is its own inverse`
+  - [ ]* 7.9 Tulis property test untuk task completed dirender dengan class visual (Property 13)
+    - **Property 13: Completed tasks render with a visual-distinction class**
+    - **Validates: Requirements 5.2**
+    - Gunakan `taskArbitrary.map(t => ({ ...t, completed: true }))`
+    - `// Feature: todo-life-dashboard, Property 13: Completed tasks render with a visual-distinction class`
+
+- [x] 8. Checkpoint — Pastikan semua tests task list dan timer lulus
+  - Pastikan semua tests lulus, tanyakan ke user jika ada pertanyaan.
+
+- [ ] 9. Implementasi Quick Links Controller
+  - [ ] 9.1 Tulis `LinksController.addLink(label, url)` dan validasi input
+    - Validasi: label non-empty dan URL valid dengan `new URL(rawInput)` (tangkap exception jika invalid)
+    - Jika invalid: tampilkan pesan inline di bawah field yang gagal, jangan buat link baru
+    - Jika valid: buat objek `Link` dengan `id`, `label`, `url`; tambahkan ke `state.links`, simpan ke Storage, panggil `render()`
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6_
+  - [ ]* 9.2 Tulis property test untuk add valid link menambah panjang array (Property 16)
+    - **Property 16: Adding a valid link grows the links array by one**
+    - **Validates: Requirements 7.2**
+    - Gunakan `fc.array(linkArbitrary)` × `fc.string({ minLength: 1 })` × valid URL arbitrary
+    - `// Feature: todo-life-dashboard, Property 16: Adding a valid link grows the links array by one`
+  - [ ]* 9.3 Tulis property test untuk invalid link input ditolak (Property 17)
+    - **Property 17: Invalid link input is rejected**
+    - **Validates: Requirements 7.3**
+    - Gunakan empty label OR string yang tidak parseable sebagai URL
+    - `// Feature: todo-life-dashboard, Property 17: Invalid link input is rejected`
+  - [x] 9.4 Tulis `LinksController.deleteLink(id)` dan `LinksController.render()`
+    - `deleteLink`: hapus dari `state.links` dan Storage, panggil `render()`
+    - `render()` memanggil `Renderer.renderLinkList(...)`, setiap tombol link membuka URL di tab baru (`target="_blank"`)
+    - _Requirements: 7.4, 8.1_
+  - [ ]* 9.5 Tulis property test untuk delete link menghapus item (Property 11 — links)
+    - **Property 11: Deleting an item removes it from state and storage (links)**
+    - **Validates: Requirements 8.1**
+    - Gunakan `fc.array(linkArbitrary, { minLength: 1 })`
+    - `// Feature: todo-life-dashboard, Property 11: Deleting an item removes it from state and storage`
+
+- [x] 10. Implementasi Theme Controller dan Username Controller
+  - [x] 10.1 Tulis `ThemeController.init()` dan `ThemeController.toggle()`
+    - `init()`: baca theme dari Storage; jika tidak ada, gunakan `window.matchMedia('(prefers-color-scheme: dark)')` sebagai fallback; set atribut `data-theme` di `<html>`
+    - `toggle()`: flip antara `"light"` dan `"dark"`, update `data-theme`, simpan ke Storage
+    - _Requirements: 9.1, 9.2, 9.3, 9.4_
+  - [ ]* 10.2 Tulis property test untuk theme toggle adalah inversnya sendiri (Property 18)
+    - **Property 18: Theme toggle is its own inverse**
+    - **Validates: Requirements 9.2**
+    - Gunakan `fc.constantFrom('light', 'dark')`
+    - `// Feature: todo-life-dashboard, Property 18: Theme toggle is its own inverse`
+  - [x] 10.3 Tulis `UsernameController.init()`, `UsernameController.save(name)`, dan `UsernameController.clear()`
+    - `init()`: baca `username` dari Storage, set `state.username`
+    - `save(name)`: jika non-empty, simpan ke Storage dan update `state.username`; jika empty, hapus key dari Storage dan set `state.username = null`; panggil `GreetingController.render()` setelah perubahan
+    - _Requirements: 10.1, 10.2, 10.3, 10.4_
+  - [ ]* 10.4 Tulis property test untuk username muncul di greeting (Property 19)
+    - **Property 19: Saving a username makes it appear in the rendered greeting**
+    - **Validates: Requirements 10.2**
+    - Gunakan `fc.string({ minLength: 1 })`
+    - `// Feature: todo-life-dashboard, Property 19: Saving a username makes it appear in the rendered greeting`
+
+- [x] 11. Wiring semua controller di fungsi `init()` utama
+  - [x] 11.1 Tulis fungsi `init()` di `js/app.js` yang dipanggil saat `DOMContentLoaded`
+    - Urutan inisialisasi: `StorageModule` → baca semua data ke `state` → `ThemeController.init()` → `UsernameController.init()` → `GreetingController.init()` → `TimerController.init()` → `TaskController.init()` → `LinksController.init()`
+    - Jika Storage tidak tersedia atau data malformed, tampilkan banner/pesan non-blocking ke user
+    - _Requirements: 3.5, 7.6, 9.4, 10.4, 11.3_
+  - [x] 11.2 Hubungkan semua event listener ke elemen DOM yang sesuai
+    - Tombol theme toggle → `ThemeController.toggle()`
+    - Form custom name → `UsernameController.save()` / `clear()`
+    - Tombol start/stop/reset timer → `TimerController.start/stop/reset()`
+    - Form add task → `TaskController.addTask()`; tombol edit/delete/complete per task → handler yang sesuai
+    - Tombol sort → `TaskController.setSort()` yang cycle through sort modes
+    - Form add link → `LinksController.addLink()`; tombol delete link → `LinksController.deleteLink()`
+    - _Requirements: 1.1, 2.2, 2.4, 2.5, 3.1, 3.2, 4.1, 4.3, 5.1, 6.1, 7.1, 7.2, 8.1, 9.1, 10.1_
+
+- [x] 12. Final checkpoint — Pastikan semua fitur terintegrasi dan tests lulus
+  - Pastikan semua tests lulus, tanyakan ke user jika ada pertanyaan.
+
+## Notes
+
+- Tasks bertanda `*` bersifat opsional dan dapat dilewati untuk MVP yang lebih cepat
+- Setiap task mereferensikan requirement spesifik untuk traceability
+- Property tests menggunakan library **fast-check**; setiap test wajib menjalankan minimal 100 iterasi
+- Unit tests untuk timer wajib menggunakan fake timers (`vi.useFakeTimers`)
+- Sort mode tidak dipersist ke Storage; selalu kembali ke insertion order saat halaman dimuat ulang
+- Seluruh kode harus berjalan langsung di browser tanpa build step (tidak ada ES modules `type="module"`, gunakan IIFE)
